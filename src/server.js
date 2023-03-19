@@ -1,4 +1,5 @@
 //backend
+// console.log(message.toString("utf8"));
 
 import http from "http";
 import WebSocket from "ws";
@@ -18,19 +19,28 @@ const handleListen = () =>
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+const sockets = [];
+
 function onSocketClose() {
 	console.log("Disconnected from the Browser.");
 }
 
-function onSocketMessage(message) {
-	console.log(message.toString("utf8"));
-}
-
 wss.on("connection", (socket) => {
+	sockets.push(socket);
+	socket["nickname"] = "Anon";
 	console.log("Connected to Browser.");
+	socket.on("message", (msg) => {
+		const message = JSON.parse(msg);
+		switch (message.type) {
+			case "new_message":
+				sockets.forEach((aSocket) =>
+					aSocket.send(`${socket.nickname}: ${message.payload}`)
+				);
+			case "nickname":
+				socket["nickname"] = message.payload;
+		}
+	});
 	socket.on("close", onSocketClose);
-	socket.on("message", onSocketMessage);
-	socket.send("hello!!!");
 });
 
 server.listen(3000, handleListen);
