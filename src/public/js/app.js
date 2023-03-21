@@ -3,16 +3,36 @@
 const socket = io(); //how 어떻게 백엔드에서 실행되는 socket.io를 알아서 찾지
 const welcome = document.getElementById("welcome");
 const form = welcome.querySelector("form");
+const room = document.getElementById("room");
 
-const backendDone = (msg) => {
-	console.log(`The backend says: ${msg}`);
+room.hidden = true;
+
+let roomName;
+
+const addMessage = (message) => {
+	const ul = room.querySelector("ul");
+	const li = document.createElement("li");
+	li.innerText = message;
+	ul.appendChild(li);
+};
+
+const showRoom = () => {
+	welcome.hidden = true;
+	room.hidden = false;
+	const h3 = room.querySelector("h3");
+	h3.innerText = `Room ${roomName}`;
 };
 
 const handleRoomSubmit = (event) => {
 	event.preventDefault();
 	const input = form.querySelector("input");
-	socket.emit("enter_room", input.value, backendDone);
+	socket.emit("enter_room", input.value, showRoom);
+	roomName = input.value;
 	input.value = "";
 };
 
 form.addEventListener("submit", handleRoomSubmit);
+
+socket.on("welcome", () => {
+	addMessage("Someone joined!");
+});
