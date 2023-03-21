@@ -1,46 +1,18 @@
-//frontend
-const messageList = document.querySelector("ul");
-const nickForm = document.querySelector("#nick");
-const messageForm = document.querySelector("#message");
-const socket = new WebSocket(`ws://${window.location.host}`);
+//wsSocket -> SocketIO 장점 1. 어느 이벤트든지 보내기 가능. message only가 아니라. 2. Object 혹은 아무거나 여러개 전송 가능. stringify, parse 안해도됨. 3. 최고는 서버에서 호출되는 콜백함수. 서버가 함수를 호출하고 함수는 프론트엔드에서 실행됨. (socket.emit의 1,2,.. ,마지막 번째 arguments) 이 함수는 백엔드에서 실행되는거아님! 프론트에서 짠 함수가 백엔드에서 실행된다면 심각한 보안 문제. 할라면 emit의 마지막 argument가 function이기만 하면 됨.
 
-function makeMessage(type, payload) {
-	const msg = { type, payload };
-	return JSON.stringify(msg);
-}
+const socket = io(); //how 어떻게 백엔드에서 실행되는 socket.io를 알아서 찾지
+const welcome = document.getElementById("welcome");
+const form = welcome.querySelector("form");
 
-function handleOpen() {
-	console.log("Connected to Server.");
-}
+const backendDone = (msg) => {
+	console.log(`The backend says: ${msg}`);
+};
 
-socket.addEventListener("open", handleOpen);
-
-socket.addEventListener("message", (message) => {
-	const li = document.createElement("li");
-	li.innerText = message.data;
-	messageList.append(li);
-});
-
-socket.addEventListener("close", () => {
-	console.log("Disconnected from Server.");
-});
-
-function handleSubmit(event) {
+const handleRoomSubmit = (event) => {
 	event.preventDefault();
-	const input = messageForm.querySelector("input");
-	socket.send(makeMessage("new_message", input.value));
-	const li = document.createElement("li");
-	li.innerText = `You: ${input.value}`;
-	messageList.append(li);
+	const input = form.querySelector("input");
+	socket.emit("enter_room", input.value, backendDone);
 	input.value = "";
-}
+};
 
-function handleNickSubmit(event) {
-	event.preventDefault();
-	const input = nickForm.querySelector("input");
-	socket.send(makeMessage("nickname", input.value));
-	input.value = "";
-}
-
-messageForm.addEventListener("submit", handleSubmit);
-nickForm.addEventListener("submit", handleNickSubmit);
+form.addEventListener("submit", handleRoomSubmit);
