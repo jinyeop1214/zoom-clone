@@ -2,10 +2,12 @@
 
 const socket = io(); //how 어떻게 백엔드에서 실행되는 socket.io를 알아서 찾지
 const welcome = document.getElementById("welcome");
-const form = welcome.querySelector("form");
+const nickname = welcome.querySelector("#name");
+const enter = welcome.querySelector("#enter");
 const room = document.getElementById("room");
 
 room.hidden = true;
+enter.hidden = true;
 
 let roomName;
 
@@ -16,23 +18,59 @@ const addMessage = (message) => {
 	ul.appendChild(li);
 };
 
+const handleMessageSubmit = (event) => {
+	event.preventDefault();
+	const input = room.querySelector("#msg input");
+	const value = input.value;
+	socket.emit("new_message", input.value, roomName, () => {
+		addMessage(`You: ${value}`);
+	});
+	input.value = "";
+};
+
 const showRoom = () => {
+	nickname.hidden = false;
 	welcome.hidden = true;
 	room.hidden = false;
 	const h3 = room.querySelector("h3");
 	h3.innerText = `Room ${roomName}`;
+
+	const msgForm = room.querySelector("#msg");
+	msgForm.addEventListener("submit", handleMessageSubmit);
 };
 
 const handleRoomSubmit = (event) => {
 	event.preventDefault();
-	const input = form.querySelector("input");
+	const input = enter.querySelector("input");
 	socket.emit("enter_room", input.value, showRoom);
 	roomName = input.value;
 	input.value = "";
 };
 
-form.addEventListener("submit", handleRoomSubmit);
+const showEnter = () => {
+	nickname.hidden = true;
+	enter.hidden = false;
+	enter.addEventListener("submit", handleRoomSubmit);
+};
 
-socket.on("welcome", () => {
-	addMessage("Someone joined!");
+const handleNicknameSubmit = (event) => {
+	event.preventDefault();
+	const input = nickname.querySelector("#name input");
+	socket.emit("nickname", input.value, showEnter);
+	input.value = "";
+};
+
+nickname.addEventListener("submit", handleNicknameSubmit);
+
+socket.on("welcome", (user) => {
+	addMessage(`${user} joined!`);
 });
+
+socket.on("bye", (left) => {
+	addMessage(`${left} left ㅠㅜ`);
+});
+
+socket.on("new_message", addMessage); //밑에랑 같다. 왜 같은지 공부
+// socket.on("new_message", (msg) => {
+// 	addMessage(msg);
+// });
